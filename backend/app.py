@@ -48,14 +48,16 @@ def setup_system(
     current_admin: schemas.User = Depends(security.require_admin_user)
 ):
     
-    # clean up existing data
-
-    db.querry(models.DailyVisit).delete()
-    db.querry(models.PointOfStop).delete()
-    db.querry(models.User).delete()
-
     try:
+
+        # clean up existing data
+        
+        db.query(models.DailyVisit).delete()
+        db.query(models.PointOfStop).delete()
+        db.query(models.User).delete()
+        
         # load and process users file
+        
         users_contents = users_file.file.read()
         users_df = pd.read_excel(io.BytesIO(users_contents))
 
@@ -64,13 +66,14 @@ def setup_system(
             db_user = models.User(
                 username=row['username'],
                 hashed_password=hashed_password,
-                role=row['role']
-                hashed_password=hashed_password
-            )
+                role=row['role'])
             db.add(db_user)
-
+            pos_contents = pos_file.file.read()
+            pos_df = pd.read_excel(io.BytesIO(pos_contents))
+        
         #translate names of columns if necessary
-        comlumn_mapping = {
+    
+        column_mapping = {
             'ID': 'external_id',
             'Nombre del PDV': 'name',
             'Cadena': 'chain',
@@ -89,16 +92,12 @@ def setup_system(
         }
         pos_df.rename(columns=column_mapping, inplace=True)
         
-        # Validação básica de colunas
-        required_user_cols = {'username', 'password', 'role' , 'name' , 'latitude', 'longitude', 'visits_per_week' , 'WorkingStatus', 'visit_duration_hours'}
-        if not required_user_cols.issubset(users_df.columns):
-            raise HTTPException(status_code=400, detail="Ficheiro de utilizadores com colunas em falta.")
-
         # converrt WorkingStatus to boolean with various possible inputs
-        pos_df[WorkingStatus] = pos_df[WorkingStatus].apply(lambda x: True if str(x).lower() in ['yes', 'true', '1', 'sim' , 'si'] else False)
+        
+        pos_df['WorkingStatus'] = pos_df['WorkingStatus'].apply(lambda x: True if str(x).lower() in ['yes', 'true', '1', 'sim' , 'si'] else False)
 
 
-        for _, row in users_df.iterrows():
+        for _, row in pos_df.iterrows():
             pos_data_dict = row.to_dict()
             pos_schema = schemas.PointOfStopCreate(**pos_data_dict)
             db_pos = models.PointOfStop(**pos_schema.dict())
@@ -106,10 +105,9 @@ def setup_system(
 
 
         db.commit()
+        
+        return {"message": "setup completed successfully","details": f"{users_df.shape[0]} users and {pos_df.shape[0]} points of sale added."} 
     
     except Exception as e:
-
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Ocorreu um erro ao processar o ficheiro de utilizadores: {str(e)}")
-    
-    return {"message": "setup completed successfully","details": f"{users_df.shape[0]} users and {pos_df.shape[0]} points of sale added."} 

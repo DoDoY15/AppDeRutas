@@ -8,6 +8,7 @@ class UserRole(str, enum.Enum):
     USER = "user"
 
 class VisitStatus(str, enum.Enum):
+    
     PENDING = "Pendente"
     VISITED = "Concluída"
     NOT_VISITED = "Não visitada"
