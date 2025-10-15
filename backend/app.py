@@ -1,18 +1,29 @@
-from fastapi import Depends, FastAPI, HTTPException, UploadFile, File
-from sqlalchemy.orm import Session
-from . import models, schemas, security
-from typing import List
-from .database import SessionLocal, engine
+#Import external lib
+
 import pandas as pd
 import io
+from typing import List
 
+# Import ApI 
+
+from fastapi import Depends, FastAPI, HTTPException, UploadFile, File
+from sqlalchemy.orm import Session
+
+# Import Local
+
+from . import models, schemas, security
+from .database import SessionLocal, engine
+
+# Create the database table
 models.Base.metadata.create_all(bind=engine)
 
-app = FastAPI(title ="API optimizacion de rutas")
+app = FastAPI(
+    title ="API optimizing routes",
+    description = "API to manage users and points of sale (POS) for route optimization.",
+    version = "1.0.0"
+)
 
-@app.get("/")
-def read_root():
-    return {"message": "Bem-vindo à API de Otimização de Rotas!"}
+# Dependencies
 
 def get_db():
     db = SessionLocal()
@@ -20,68 +31,85 @@ def get_db():
         yield db
     finally:
         db.close()
-from . import models, schemas, security
-from .database import SessionLocal, engine
 
+# test Root endpoint
+
+@app.get("/")
+def read_root():
+    return {"message": "Bem-vindo à API de Otimização de Rotas!"}
 
 # Endpoint para o Admin configurar o sistema com ficheiros Excel
+
 @app.post("/api/admin/setup", tags=["Admin"])
 def setup_system(
-    users_file: UploadFile = File(...),
-    pos_file: UploadFile = File(...),
+    users_file: UploadFile = File(..., description= "Excel file with users data"),
+    pos_file: UploadFile = File(..., description= "Excel file with points of sale data"),
     db: Session = Depends(get_db),
-    # A LINHA CORRIGIDA ESTÁ AQUI
     current_admin: schemas.User = Depends(security.require_admin_user)
 ):
-    """
-    Recebe dois ficheiros Excel e popula o banco de dados.
-    - **users_file**: Excel com colunas 'username', 'password', 'role'
-    - **pos_file**: Excel com colunas 'name', 'latitude', 'longitude', 'required_visits_per_week'
-    """
+    
+    # clean up existing data
+
+    db.querry(models.DailyVisit).delete()
+    db.querry(models.PointOfStop).delete()
+    db.querry(models.User).delete()
+
     try:
-        # --- Processa o ficheiro de utilizadores ---
+        # load and process users file
         users_contents = users_file.file.read()
         users_df = pd.read_excel(io.BytesIO(users_contents))
 
+        for _, row in users_df.iterrows():
+            hashed_password = security.get_password_hash(row['password'])
+            db_user = models.User(
+                username=row['username'],
+                hashed_password=hashed_password,
+                role=row['role']
+                hashed_password=hashed_password
+            )
+            db.add(db_user)
+
+        #translate names of columns if necessary
+        comlumn_mapping = {
+            'ID': 'external_id',
+            'Nombre del PDV': 'name',
+            'Cadena': 'chain',
+            'Segmentación': 'Segment',
+            'Canal del PDV': 'channel',
+            'Region': 'Region',
+            'País': 'country',
+            'Ciudad': 'City',
+            'Dirección': 'Address',
+            'Latitud': 'latitude',
+            'Longitud': 'longitude',
+            'Activo': 'WorkingStatus',
+            'Visitas semanales': 'visits_per_week',
+            'Duración visita(horas)': 'visit_duration_hours',
+            'Prioridad': 'priority'
+        }
+        pos_df.rename(columns=column_mapping, inplace=True)
+        
         # Validação básica de colunas
-        required_user_cols = {'username', 'password', 'role'}
+        required_user_cols = {'username', 'password', 'role' , 'name' , 'latitude', 'longitude', 'visits_per_week' , 'WorkingStatus', 'visit_duration_hours'}
         if not required_user_cols.issubset(users_df.columns):
             raise HTTPException(status_code=400, detail="Ficheiro de utilizadores com colunas em falta.")
 
-        for index, row in users_df.iterrows():
-            # Aqui vamos adicionar a lógica para criar o utilizador no banco
-            # Por agora, vamos apenas imprimir para testar
-            print(f"A criar utilizador: {row['username']}")
-            # OBS: Em um projeto real, a senha deve ser 'hasheada' antes de salvar!
-            # Por simplicidade, vamos ignorar o hashing por enquanto.
-            user_data = schemas.UserCreate(
-                username=row['username'],
-                password=row['password'], # Lembre-se, isso não é seguro para produção!
-                role=row['role']
-            )
-            # Adicionar ao banco (lógica a ser implementada)
+        # converrt WorkingStatus to boolean with various possible inputs
+        pos_df[WorkingStatus] = pos_df[WorkingStatus].apply(lambda x: True if str(x).lower() in ['yes', 'true', '1', 'sim' , 'si'] else False)
 
-        # --- Processa o ficheiro de Pontos de Venda (PDV) ---
-        pos_contents = pos_file.file.read()
-        pos_df = pd.read_excel(io.BytesIO(pos_contents))
 
-        required_pos_cols = {'name', 'latitude', 'longitude'}
-        if not required_pos_cols.issubset(pos_df.columns):
-            raise HTTPException(status_code=400, detail="Ficheiro de PDVs com colunas em falta.")
+        for _, row in users_df.iterrows():
+            pos_data_dict = row.to_dict()
+            pos_schema = schemas.PointOfStopCreate(**pos_data_dict)
+            db_pos = models.PointOfStop(**pos_schema.dict())
+            db.add(db_pos) 
 
-        for index, row in pos_df.iterrows():
-            print(f"A criar PDV: {row['name']}")
-            pos_data = schemas.PointOfSaleCreate(
-                name=row['name'],
-                latitude=row['latitude'],
-                longitude=row['longitude'],
-                # Trata o caso da coluna opcional não existir no Excel
-                required_visits_per_week=row.get('required_visits_per_week', 1)
-            )
-            # Adicionar ao banco (lógica a ser implementada)
 
+        db.commit()
+    
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Ocorreu um erro ao processar os ficheiros: {e}")
 
-
-    return {"message": f"Ficheiros processados com sucesso pelo admin: {current_admin.username}"}
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Ocorreu um erro ao processar o ficheiro de utilizadores: {str(e)}")
+    
+    return {"message": "setup completed successfully","details": f"{users_df.shape[0]} users and {pos_df.shape[0]} points of sale added."} 

@@ -6,21 +6,26 @@ from .models import UserRole
 # Schema base para um Ponto de Parada
 class PointOfStopBase(BaseModel):
     
-    id: int 
+    external_id: Optional[int] = None 
     name: str
+    chain : Optional[str] = None
+    channel: Optional[str] = None
+    Segment: Optional[str] = None
+    
     latitude: float
     longitude: float
-    Segment: Optional[str] = None
     country: Optional[str] = None
     City: Optional[str] = None
     Region: Optional[str] = None
     Address: Optional[str] = None
+    
     WorkingStatus: bool 
     visits_per_week: int 
     visit_duration_hours: int 
     last_visited_at : Optional[date] 
-    visits: Optional[list] 
-    
+    visits: Optional[list]
+    priority: Optional[int] = 1
+
 class PointOfStopCreate(PointOfStopBase):
     pass
 

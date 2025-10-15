@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Float, Date, Enum, ForeignKey
+from sqlalchemy import Boolean, Column, Integer, String, Float, Date, Enum, ForeignKey
 from sqlalchemy.orm import relationship
 import enum
 from .database import Base
@@ -21,21 +21,32 @@ class User(Base):
     visits = relationship("DailyVisit", back_populates="user")
 
 class PointOfStop(Base):
-    # Nome da tabela padronizado (plural minúsculo)
-    __tablename__ = "point_of_stops"
+    
+    # identificacao 
 
+    __tablename__ = "point_of_stops"
+    external_id = Column(String, unique=True, index=True, nullable=True)
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, index=True, nullable=False)
+    chain = Column(String, nullable=True)
     Segment = Column(String, nullable=True)
-    country = Column(String, nullable=True)
+    channel = Column(String, nullable=True)
+    
+    # localizacao
+
     City = Column(String, nullable=True)
+    Country = Column(String, nullable=True)
     Region = Column(String, nullable=True)
     Address = Column(String, nullable=True) 
-    WorkingStatus = Column(String, nullable=True)
     latitude = Column(Float, nullable=False)
     longitude = Column(Float, nullable=False)
+    
+    # Variaveis
+
+    WorkingStatus = Column(Boolean, nullable=True)
     visits_per_week = Column(Integer, default=1)
     visit_duration_hours = Column(Integer, default=1) 
+    priority = Column(Integer, default=1)
     last_visited_at = Column(Date, nullable=True)
     visits = relationship("DailyVisit", back_populates="point_of_stop")
 
