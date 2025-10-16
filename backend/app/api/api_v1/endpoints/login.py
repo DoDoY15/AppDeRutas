@@ -1,10 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session 
-
-from ... import schemas, crud
-from ...core import security
-from ....dependencies import get_db
+from .... import schemas, crud 
+from .... core import security
+from .... dependencies import get_db , require_admin_user
 
 router = APIRouter()
 
@@ -19,10 +18,4 @@ def login_for_access_token(
 
     access_token = security.create_access_token(data={"sub": user.username})
     return {"access_token": access_token, "token_type": "bearer"}
-
-get_current_user = security.get_current_user
-
-
-require_admin_user = security.require_admin_user
-
 
