@@ -11,7 +11,7 @@ from sqlalchemy.orm import Session
 
 # Import Local
 
-from . import models, schemas, security
+from . import models, schemas, security , crud
 from .database import SessionLocal, engine
 
 # Create the database table
@@ -47,66 +47,18 @@ def setup_system(
     db: Session = Depends(get_db),
     current_admin: schemas.User = Depends(security.require_admin_user)
 ):
-    
+
+
+# Module CRUD to process and load users and points of sale from Excel files
+
     try:
 
-        # clean up existing data
-        
-        db.query(models.DailyVisit).delete()
-        db.query(models.PointOfStop).delete()
-        db.query(models.User).delete()
-        
-        # load and process users file
-        
-        users_contents = users_file.file.read()
-        users_df = pd.read_excel(io.BytesIO(users_contents))
-
-        for _, row in users_df.iterrows():
-            hashed_password = security.get_password_hash(row['password'])
-            db_user = models.User(
-                username=row['username'],
-                hashed_password=hashed_password,
-                role=row['role'])
-            db.add(db_user)
-            pos_contents = pos_file.file.read()
-            pos_df = pd.read_excel(io.BytesIO(pos_contents))
-        
-        #translate names of columns if necessary
-    
-        column_mapping = {
-            'ID': 'external_id',
-            'Nombre del PDV': 'name',
-            'Cadena': 'chain',
-            'Segmentación': 'Segment',
-            'Canal del PDV': 'channel',
-            'Region': 'Region',
-            'País': 'country',
-            'Ciudad': 'City',
-            'Dirección': 'Address',
-            'Latitud': 'latitude',
-            'Longitud': 'longitude',
-            'Activo': 'WorkingStatus',
-            'Visitas semanales': 'visits_per_week',
-            'Duración visita(horas)': 'visit_duration_hours',
-            'Prioridad': 'priority'
-        }
-        pos_df.rename(columns=column_mapping, inplace=True)
-        
-        # converrt WorkingStatus to boolean with various possible inputs
-        
-        pos_df['WorkingStatus'] = pos_df['WorkingStatus'].apply(lambda x: True if str(x).lower() in ['yes', 'true', '1', 'sim' , 'si'] else False)
-
-
-        for _, row in pos_df.iterrows():
-            pos_data_dict = row.to_dict()
-            pos_schema = schemas.PointOfStopCreate(**pos_data_dict)
-            db_pos = models.PointOfStop(**pos_schema.dict())
-            db.add(db_pos) 
-
+        users_count = crud.process_and_load_users(db, users_file)
+        pos_count = crud.process_and_load_pos(db, pos_file)
 
         db.commit()
-        
-        return {"message": "setup completed successfully","details": f"{users_df.shape[0]} users and {pos_df.shape[0]} points of sale added."} 
+
+        return {"message": "Setup completed successfully","details": f"{users_count} users and {pos_count} points of sale added."}
     
     except Exception as e:
         db.rollback()

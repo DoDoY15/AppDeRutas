@@ -15,6 +15,7 @@ class VisitStatus(str, enum.Enum):
 
 class User(Base):
     __tablename__ = "users"
+    external_id = Column(String, unique=True, index=True, nullable=True)    
     id = Column(Integer, primary_key=True, index=True)
     username = Column(String, unique=True, index=True, nullable=False)
     hashed_password = Column(String, nullable=False)
