@@ -11,7 +11,7 @@ from sqlalchemy.orm import Session
 
 from .core import security
 
-from .crud import crud
+from .crud import crud_excel
 
 from .db import models
 
@@ -29,15 +29,6 @@ app = FastAPI(
     version = "1.0.0"
 )
 
-# Dependencies
-
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
-
 # test Root endpoint
 
 @app.get("/")
@@ -46,7 +37,7 @@ def read_root():
 
 # Endpoint para o Admin configurar o sistema com ficheiros Excel
 
-@app.post("/api/admin/setup", tags=["Admin"])
+@router.post("/setup", tags=["Admin"])
 def setup_system(
     users_file: UploadFile = File(..., description= "Excel file with users data"),
     pos_file: UploadFile = File(..., description= "Excel file with points of sale data"),
@@ -59,8 +50,8 @@ def setup_system(
 
     try:
 
-        users_count = crud.process_and_load_users(db, users_file)
-        pos_count = crud.process_and_load_pos(db, pos_file)
+        users_count = crud_excel.process_and_load_users(db, users_file)
+        pos_count = crud_excel.process_and_load_pos(db, pos_file)
 
         db.commit()
 

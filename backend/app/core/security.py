@@ -1,25 +1,23 @@
-from fastapi import Depends, HTTPException, status
-from app.db import models
+from datetime import datetime, timedelta
+from jose import JWTError, jwt
+from passlib.context import CryptContext
 
-# Função temporária que simula um utilizador logado
-def get_current_user() -> models.User:
-    user = models.User(
-        id=1,
-        username="testadmin",
-        role=models.UserRole.ADMIN, # Mude para .USER para testar o erro 403
-        hashed_password="fake"
-    )
-    return user
+from config import Settings
 
-# ESTA é a função que queremos usar para proteger o endpoint
-def require_admin_user(current_user: models.User = Depends(get_current_user)):
-    """
-    Verifica se o utilizador atual é um admin. Se não for,
-    levanta uma exceção HTTP 403 (Forbidden).
-    """
-    if current_user.role != models.UserRole.ADMIN:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Acesso negado: Requer privilégios de administrador."
-        )
-    return current_user
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+def verify_password(plain_password, hashed_password):
+    return pwd_context.verify(plain_password, hashed_password)
+
+def get_password_hash(password: str) -> str:
+    return pwd_context.hash(password)
+
+def create_access_token(data: dict, expires_delta: timedelta | None = None):
+    to_encode = data.copy()
+    if expires_delta:
+        expire = datetime.utcnow() + expires_delta
+    else:
+        expire = datetime.utcnow() + timedelta(minutes=Settings.Access_Token_Expire_Minutes)
+    to_encode.update({"exp": expire})
+    encoded_jwt = jwt.encode(to_encode, Settings.Secret_Key, algorithm=Settings.Algorithm)
+    return encoded_jwt

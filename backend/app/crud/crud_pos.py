@@ -1,27 +1,12 @@
 import io
 import pandas as pd
+
 from sqlalchemy.orm import Session
 from fastapi import UploadFile
 
-from app.db import models
-from ..core import security
+from db import models
+from ..schemas import PointOfStop as schemas
 
-from ..schemas import schemas
-
-def process_and_load_users(db : Session , file: UploadFile) -> int:
-
-    contents = file.file.read()
-    df = pd.read_excel(io.BytesIO(contents))
-
-    for _, row in df.iterrows():
-        hashed_password = security.get_password_hash(row['password'])
-        db_user = models.User(
-            username=row['username'],
-            hashed_password=hashed_password,
-            role=row['role'])
-        db.add(db_user)
-
-    return len(df)
 
 def process_and_load_pos(db : Session , file: UploadFile) -> int:
 

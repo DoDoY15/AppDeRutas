@@ -1,9 +1,8 @@
 from pydantic import BaseModel
 from typing import Optional
 from datetime import date
-from ..db.models import UserRole
 
-# Schema base para um Ponto de Parada
+
 class PointOfStopBase(BaseModel):
     
     external_id: Optional[int] = None 
@@ -32,18 +31,5 @@ class PointOfStopCreate(PointOfStopBase):
 class PointOfStop(PointOfStopBase):
     id: int
     last_visited_at: Optional[date] = None
-    class Config:
-        from_atributes = True
-
-# Schemas de User (permanecem os mesmos)
-class UserBase(BaseModel):
-    username: str
-    role: UserRole
-
-class UserCreate(UserBase):
-    password: str
-
-class User(UserBase):
-    id: int
     class Config:
         from_atributes = True

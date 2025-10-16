@@ -52,7 +52,6 @@ class PointOfStop(Base):
     last_visited_at = Column(Date, nullable=True)
     visits = relationship("DailyVisit", back_populates="point_of_stop")
 
-
 class DailyVisit(Base):
     __tablename__ = "daily_visits"
     id = Column(Integer, primary_key=True, index=True)
@@ -74,3 +73,10 @@ class DistanceCache(Base):
     dest_lng = Column(Float, nullable=False)
     distance_meters = Column(Integer)
     duration_seconds = Column(Integer)
+
+class weaklyPlan(Base):
+    __tablename__ = "weekly_plans"
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"))
+    user = relationship("User")
+    
