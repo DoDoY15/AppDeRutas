@@ -3,7 +3,10 @@ import pandas as pd
 from sqlalchemy.orm import Session
 from fastapi import UploadFile
 
-from . import models, schemas, security
+from app.db import models
+from ..core import security
+
+from ..schemas import schemas
 
 def process_and_load_users(db : Session , file: UploadFile) -> int:
 

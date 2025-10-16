@@ -1,5 +1,5 @@
 from fastapi import Depends, HTTPException, status
-from . import models
+from app.db import models
 
 # Função temporária que simula um utilizador logado
 def get_current_user() -> models.User:

@@ -1,7 +1,7 @@
 from pydantic import BaseModel
 from typing import Optional
 from datetime import date
-from .models import UserRole
+from ..db.models import UserRole
 
 # Schema base para um Ponto de Parada
 class PointOfStopBase(BaseModel):

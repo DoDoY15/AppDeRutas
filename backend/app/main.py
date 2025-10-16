@@ -9,10 +9,16 @@ from typing import List
 from fastapi import Depends, FastAPI, HTTPException, UploadFile, File
 from sqlalchemy.orm import Session
 
+from .core import security
+
+from .crud import crud
+
+from .db import models
+
 # Import Local
 
-from . import models, schemas, security , crud
-from .database import SessionLocal, engine
+from .schemas import schemas
+from .db.database import SessionLocal, engine
 
 # Create the database table
 models.Base.metadata.create_all(bind=engine)
