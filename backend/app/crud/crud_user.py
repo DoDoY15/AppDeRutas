@@ -2,7 +2,7 @@ import io
 import pandas as pd
 from sqlalchemy.orm import Session
 from fastapi import UploadFile
-from ..db import models
+from app.db import models
 from ..core import security
 
 def get_user_by_username(db: Session, username: str):

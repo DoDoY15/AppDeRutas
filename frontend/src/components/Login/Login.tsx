@@ -36,7 +36,7 @@ export const Login: React.FC = () => {
 
     return (
             <><div className={styles.header}>
-            <h2 className={styles.title}>Aceder à Plataforma</h2>
+            <h2 className={styles.title}>Login</h2>
             <p className={styles.subtitle}>Faça login para continuar.</p>
         </div><form onSubmit={handleSubmit} className={styles.form}>
                 <div className={styles.inputGroup}>

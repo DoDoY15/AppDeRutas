@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from .... core import security
 from .... schemas import user as schemas
 from .... schemas import PointOfStopBase as pos_schemas
-from .... dependencies import get_db , require_admin_user
+from ....dependencies import get_db , require_admin_user
 from .... crud import crud_user
 from .... crud import crud_pos
 
@@ -15,7 +15,7 @@ def setup_system(
     users_file: UploadFile = File(..., description= "Excel file with users data"),
     pos_file: UploadFile = File(..., description= "Excel file with points of sale data"),
     db: Session = Depends(get_db),
-    current_admin: schemas.User = Depends(require_admin_user)
+    # current_admin: schemas.User = Depends(require_admin_user)
 ): 
     try:
 
@@ -29,3 +29,4 @@ def setup_system(
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Ocorreu um erro ao processar o ficheiro de utilizadores: {str(e)}")
+    
