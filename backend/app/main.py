@@ -10,16 +10,13 @@ from fastapi import Depends, FastAPI, HTTPException, UploadFile, File
 from sqlalchemy.orm import Session
 
 from .core import security
-
-from .crud import crud_excel
-
+from .crud import crud_user, crud_pos
 from .db import models
 
 # Import Local
 
-from dependencies import get_db
+from .dependencies import get_db
 from .api.api_v1.endpoints import setup
-from .schemas import schemas
 from .db.database import SessionLocal, engine
 
 # Create the database table

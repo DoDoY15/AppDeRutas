@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 
 from . import crud, schemas
 from .db import models
-from .core.config import settings
+from .core.config import Settings
 
 
 def get_db():
@@ -29,7 +29,7 @@ def get_current_user(
         headers={"WWW-Authenticate": "Bearer"},
     )
     try:
-        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+        payload = jwt.decode(token, Settings.SECRET_KEY, algorithms=[Settings.ALGORITHM])
         username: str = payload.get("sub")
         if username is None:
             raise credentials_exception

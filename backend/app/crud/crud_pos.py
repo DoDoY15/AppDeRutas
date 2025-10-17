@@ -4,8 +4,8 @@ import pandas as pd
 from sqlalchemy.orm import Session
 from fastapi import UploadFile
 
-from db import models
-from ..schemas import PointOfStop as schemas
+from ..db import models
+from ..schemas import PointOfStopBase as schemas
 
 
 def process_and_load_pos(db : Session , file: UploadFile) -> int:
