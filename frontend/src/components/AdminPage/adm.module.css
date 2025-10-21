@@ -1,0 +1,16 @@
+.metric-card {
+  @apply p-5 rounded-lg shadow-xl transform transition duration-200 hover:scale-[1.02] text-white;
+}
+
+.uploader-area {
+  @apply flex flex-col justify-center items-center w-full h-48 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300 cursor-pointer transition duration-150;
+  @apply hover:bg-gray-100;
+}
+
+.data-table-container {
+  @apply bg-white p-6 rounded-lg shadow-lg border border-gray-200 overflow-x-auto;
+}
+
+.table-header-cell {
+  @apply px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider;
+}
