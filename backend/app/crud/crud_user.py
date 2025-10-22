@@ -8,9 +8,10 @@ from ..core import security
 def get_user_by_username(db: Session, username: str):
     return db.query(models.User).filter(models.User.username == username).first()
 
-def process_and_load_users(db : Session , file: UploadFile) -> int:
-
-    contents = file.file.read()
+def process_and_load_users(db : Session , users_file: UploadFile) -> int:
+    
+    users_file.file.seek(0)
+    contents = users_file.file.read()
     df = pd.read_excel(io.BytesIO(contents))
 
     for _, row in df.iterrows():

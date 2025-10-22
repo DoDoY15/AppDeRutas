@@ -8,11 +8,11 @@ from ..db import models
 from ..schemas import PointOfStopBase as schemas
 
 
-def process_and_load_pos(db : Session , file: UploadFile) -> int:
+def process_and_load_pos(db : Session , pos_file: UploadFile) -> int:
 
-    contents = file.file.read()
+    pos_file.file.seek(0)
+    contents = pos_file.file.read()
     df = pd.read_excel(io.BytesIO(contents))
-
     column_mapping = {
             'ID': 'external_id',
             'Nombre del PDV': 'name',
@@ -30,8 +30,8 @@ def process_and_load_pos(db : Session , file: UploadFile) -> int:
             'Duración visita(horas)': 'visit_duration_hours',
             'Prioridad': 'priority'
         }
-    df = df.rename(columns=column_mapping, inplace=True)
-
+    
+    df = pd.read_excel(io.BytesIO(contents))
     df['WorkingStatus'] = df['WorkingStatus'].apply(lambda x: True if str(x).lower() in ['yes', 'true', '1', 'sim' , 'si', 'Sí'] else False)
 
     for _, row in df.iterrows():
