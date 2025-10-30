@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, UploadFile, File , HTTPException
 from sqlalchemy.orm import Session
 from .... core import security
 from .... schemas import user as schemas
-from .... schemas import PointOfStopBase as pos_schemas
+from ....schemas import point_of_stop as pos_schemas
 from ....dependencies import get_db , require_admin_user
 from .... crud import crud_user
 from .... crud import crud_pos

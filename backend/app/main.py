@@ -16,6 +16,7 @@ from .db import models
 
 # Import Local
 
+from app.api.api_v1.base import api_router
 from .dependencies import get_db
 from .api.api_v1.endpoints import upload_setup
 from .db.database import SessionLocal, engine
@@ -28,7 +29,8 @@ app = FastAPI(
     description = "API to manage users and points of sale (POS) for route optimization.",
     version = "1.0.0")
 
-origins = ["http://localhost:3000"]
+origins = ["http://localhost:3000",
+           "http://localhost:5173"]
 
 app.add_middleware(
     CORSMiddleware,
@@ -38,10 +40,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(upload_setup.router, prefix="/app/api/api_v1")  
+app.include_router(api_router, prefix="/api/v1")
 
 # test Root endpoint
 
 @app.get("/")
 def read_root():
-    return {"message": "Bem-vindo à API de Otimização de Rotas!"}
+    return {"status": "API de Otimização de Rotas está online"}
