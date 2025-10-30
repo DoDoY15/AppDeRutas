@@ -39,8 +39,6 @@ npm start
 ```
 ## 📚 API Documentation
 
-La documentación de la API está disponible en:
-- Swagger UI: http://localhost:8000/docs
-- ReDoc: http://localhost:8000/redoc
+[UMLS](https://www.notion.so/dodoy/UMLs-28c5e074499e80369bb9f9f90abe782b?source=copy_link)
 
 ## 📝 Licencia
