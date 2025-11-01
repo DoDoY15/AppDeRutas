@@ -11,3 +11,5 @@ __pycache__/
 
 # Ficheiros de IDE (ex: VSCode)
 .vscode/
+
+.env

@@ -4,12 +4,12 @@ from datetime import datetime, timedelta
 import traceback
 
 from app.db.models import (
-    User,
-    DailyVisit,
+    user,
+    dailyVisit,
     weaklyPlan,
-    PointOfStop,
-    OptimizationRun,
-    OptimizationStatus
+    pointOfStop,
+    optimizationRun,
+    optimizationStatus
 )
 
 from ..funnel.priority_filter import (
@@ -26,11 +26,11 @@ def generate_and_save_schedules(db: Session, run_id: int, num_days: int = 5):
     Função principal de geração de rotas e agendamentos.
     Usa OptimizationRun para rastrear execuções.
     """
-    run = db.query(OptimizationRun).filter(OptimizationRun.id == run_id).first()
+    run = db.query(optimizationRun).filter(optimizationRun.id == run_id).first()
     if not run:
         print(f"Erro Crítico: Run ID {run_id} não encontrado. Saindo da tarefa.")
         return
-    run.status = OptimizationStatus.RUNNING
+    run.status = optimizationStatus.RUNNING
     db.commit()
 
     total_pdvs_assigned_run = 0
@@ -38,7 +38,7 @@ def generate_and_save_schedules(db: Session, run_id: int, num_days: int = 5):
 
     try:
         print("Limpando agendamentos antigos...")
-        db.query(DailyVisit).filter(DailyVisit.optimization_run_id != run_id).delete()
+        db.query(dailyVisit).filter(dailyVisit.optimization_run_id != run_id).delete()
         db.query(weaklyPlan).filter(weaklyPlan.optimization_run_id != run_id).delete()
 
         all_pdvs, all_workers = get_data_pool(db)
@@ -111,7 +111,7 @@ def generate_and_save_schedules(db: Session, run_id: int, num_days: int = 5):
                         pdvs_scheduled_this_day_indices.append(matrix_index)
                         last_location_index = matrix_index
 
-                        new_visit = DailyVisit(
+                        new_visit = dailyVisit(
                             visit_date=visit_date,
                             status='Pendente',
                             user_id=worker.id,
@@ -134,7 +134,7 @@ def generate_and_save_schedules(db: Session, run_id: int, num_days: int = 5):
             if unassigned_count:
                 print(f"AVISO: {unassigned_count} PDVs não alocados para {worker.full_name}.")
         
-        run.status = OptimizationStatus.COMPLETED
+        run.status = optimizationStatus.COMPLETED
         run.total_pdvs_assigned = total_pdvs_assigned_run
         run.total_pdvs_unassigned = total_pdvs_unassigned_run
         db.commit()
@@ -142,7 +142,7 @@ def generate_and_save_schedules(db: Session, run_id: int, num_days: int = 5):
 
     except Exception as e:
         db.rollback()
-        run.status = OptimizationStatus.FAILED
+        run.status = optimizationStatus.FAILED
         db.commit()
         print(f"Erro ao salvar agendamento no BD: {e}")
         print("!!!!!!!!!!! ERRO NO CÁLCULO EM SEGUNDO PLANO !!!!!!!!!!!")

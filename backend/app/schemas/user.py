@@ -3,6 +3,7 @@ from typing import Optional
 from ..db.models import UserRole 
 
 class UserBase(BaseModel):
+    
     username: str 
     email: Optional[str] = None
     full_name: Optional[str] = None
