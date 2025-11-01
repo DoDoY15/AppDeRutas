@@ -12,6 +12,7 @@ class UserBase(BaseModel):
     start_longitude: Optional[float] = None
     daily_work_duration_seconds: Optional[int] = 28800
     max_visits_per_day: Optional[int] = None
+    working_status: Optional[bool] = False
     
     class Config:
         from_attributes = True 

@@ -16,7 +16,7 @@ class PointOfStopBase(BaseModel):
     country: Optional[str] = None
     city: Optional[str] = None
     address: Optional[str] = None
-    workingStatus: Optional[bool] = True
+    working_status: Optional[bool] = True
     visits_per_week: Optional[int] = 1
     visit_duration_seconds: Optional[int] = 1800 
     priority: Optional[int] = 1

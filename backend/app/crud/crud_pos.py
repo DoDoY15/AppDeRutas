@@ -19,6 +19,7 @@ def process_and_load_pos(db: Session, pos_file: UploadFile) -> int:
 
     # 3. Mapeamento
     column_mapping = {
+        
         'ID': 'external_id',
         'Nombre del PDV': 'name',
         'Cadena': 'chain',
