@@ -1,4 +1,5 @@
 from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from typing import Any, Dict
 from fastapi import HTTPException
 from app.db.models import OptimizationRun, OptimizationStatus, WeeklyPlan, User
@@ -44,7 +45,10 @@ def get_latest_optimization_status(db: Session) -> Dict[str, Any]:
 # LÓGICA PARA: GET /results/latest
 # ======================================================================
 def get_latest_optimization_results(db: Session) -> Dict[str, Any]:
-    """ Retorna os resultados da última execução CONCLUÍDA. """
+    """ 
+    Retorna os resultados da última execução CONCLUÍDA,
+    incluindo a sequência de visitas por dia para a tabela.
+    """
     
     latest_run = db.query(OptimizationRun).filter(
         OptimizationRun.status == OptimizationStatus.COMPLETED
@@ -53,6 +57,7 @@ def get_latest_optimization_results(db: Session) -> Dict[str, Any]:
     if not latest_run:
         raise HTTPException(status_code=404, detail="Nenhum resultado de otimização concluído encontrado.")
 
+    # --- Métricas Globais (para o Dashboard) ---
     dashboard_data = {
         "run_id": latest_run.id,
         "total_pdvs_assigned": latest_run.total_pdvs_assigned,
@@ -60,21 +65,73 @@ def get_latest_optimization_results(db: Session) -> Dict[str, Any]:
         "created_at": latest_run.created_at,
     }
 
+    # --- Dados da Tabela (com Sequência) ---
+    
+    # 1. Busca os Planos Semanais E carrega os Usuários
     worker_plans = db.query(WeeklyPlan).filter(
         WeeklyPlan.optimization_run_id == latest_run.id
-    ).join(User).all() 
+    ).options(
+        joinedload(WeeklyPlan.user) # Carrega o usuário junto (JOIN)
+    ).all()
+    
+    # 2. Busca TODAS as visitas desta execução (muito eficiente)
+    all_visits = db.query(DailyVisit).filter(
+        DailyVisit.optimization_run_id == latest_run.id
+    ).options(
+        joinedload(DailyVisit.point_of_stop) # Carrega o PDV junto (JOIN)
+    ).order_by(
+        DailyVisit.visit_date.asc(),
+        DailyVisit.visit_order.asc()
+    ).all()
+    
+    # 3. Agrupa as visitas por usuário para facilitar
+    visits_by_user = {}
+    for visit in all_visits:
+        if visit.user_id not in visits_by_user:
+            visits_by_user[visit.user_id] = []
+        visits_by_user[visit.user_id].append(visit)
 
+    # 4. Constrói a resposta da tabela
     table_data = []
     for plan in worker_plans:
         user_data = { "full_name": plan.user.full_name }
+        
+        # --- LÓGICA DA SEQUÊNCIA (O que você pediu) ---
+        sequencia_por_dia = {
+            "Segunda": [], # (Dia 1)
+            "Terça": [],   # (Dia 2)
+            "Quarta": [],  # (Dia 3)
+            "Quinta": [],  # (Dia 4)
+            "Sexta": [],   # (Dia 5)
+        }
+        
+        user_visits = visits_by_user.get(plan.user_id, [])
+        
+        for visit in user_visits:
+            # .weekday() retorna 0 para Segunda, 1 para Terça...
+            day_index = visit.visit_date.weekday() 
+            pdv_name = visit.point_of_stop.name if visit.point_of_stop else "PDV Desconhecido"
+            
+            if day_index == 0:
+                sequencia_por_dia["Segunda"].append(pdv_name)
+            elif day_index == 1:
+                sequencia_por_dia["Terça"].append(pdv_name)
+            elif day_index == 2:
+                sequencia_por_dia["Quarta"].append(pdv_name)
+            elif day_index == 3:
+                sequencia_por_dia["Quinta"].append(pdv_name)
+            elif day_index == 4:
+                sequencia_por_dia["Sexta"].append(pdv_name)
+        # --- FIM DA LÓGICA ---
 
         table_data.append({
-            "id": plan.id, 
+            "id": plan.id,
+            "user_id": plan.user_id, # <-- DADO NOVO (usuario_id)
             "user": user_data,
             "horas_semanais_estimadas": (plan.user.weekly_working_seconds / 3600) or 0, 
-            "total_pdvs_assigned": plan.total_pos_assigned,
-            # (O prefixo /api/v1 vem do seu roteador principal)
-            "download_link": f"/api/v1/optimize/download/worker/{plan.user_id}/run/{latest_run.id}"
+            "total_pos_assigned": plan.total_pos_assigned,
+            "download_link": f"/api/v1/optimize/download/worker/{plan.user_id}/run/{latest_run.id}",
+            "sequencia": sequencia_por_dia # <-- DADO NOVO (Secuencia)
         })
         
     return {"dashboard": dashboard_data, "table": table_data}
