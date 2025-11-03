@@ -70,6 +70,10 @@ class DailyVisit (Base):
     visit_date = Column(Date, nullable=False, index=True)
     visit_order = Column(Integer, nullable=True)
 
+    duration_from_previous_seconds = Column(Integer, nullable=True)
+    estimated_arrival_time = Column(String, nullable=True)
+    estimated_departure_time = Column(String, nullable=True)
+
     status = Column(Enum(VisitStatus), default=VisitStatus.PENDING)
     user_id = Column(Integer, ForeignKey("users.id"))
     point_of_stop_id = Column(Integer, ForeignKey("point_of_stops.id"))

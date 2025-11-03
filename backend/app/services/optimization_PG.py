@@ -78,10 +78,16 @@ def get_latest_optimization_results(db: Session) -> Dict[str, Any]:
         })
         
     return {"dashboard": dashboard_data, "table": table_data}
-
+# ======================================================================
+# LÓGICA PARA: GET /Download
+# ======================================================================
 def generate_worker_schedule_excel(db: Session, user_id: int, run_id: int) -> StreamingResponse:
-
-    #  Consultar os Dados (A "Agenda" do DB)
+    """
+    Consulta o DB e gera um arquivo Excel em memória para download,
+    incluindo os novos dados de tempo de chegada/saída.
+    """
+    
+    # 1. Consultar os Dados (A "Agenda" do DB)
     visits_query = db.query(
         DailyVisit, User, PointOfStop
     ).join(
@@ -106,9 +112,20 @@ def generate_worker_schedule_excel(db: Session, user_id: int, run_id: int) -> St
 
     # 2. Formatar os Dados para o Excel
     data_for_excel = []
-    worker_name = visits_data[0].User.full_name # Pega o nome do primeiro registro
+    worker_name = visits_data[0].User.full_name
+    
+    total_time_acumulado_seg = 0
+    total_travel_time_seg = 0
 
     for visit, user, pdv in visits_data:
+        
+        # --- CÁLCULO DE ACUMULADOS ---
+        travel_time_min = (visit.duration_from_previous_seconds or 0) / 60
+        visit_time_min = (pdv.visit_duration_seconds or 0) / 60
+        
+        total_travel_time_seg += (visit.duration_from_previous_seconds or 0)
+        total_time_acumulado_seg += (visit.duration_from_previous_seconds or 0) + (pdv.visit_duration_seconds or 0)
+
         data_for_excel.append({
             "Data da Visita": visit.visit_date.strftime("%Y-%m-%d"),
             "Dia da Semana": visit.visit_date.strftime("%A"),
@@ -116,9 +133,15 @@ def generate_worker_schedule_excel(db: Session, user_id: int, run_id: int) -> St
             "Trabalhador": user.full_name,
             "PDV (Loja)": pdv.name,
             "Endereço": pdv.address,
-            "Cidade": pdv.city,
-            "Duração Estimada (min)": (pdv.visit_duration_seconds / 60),
-            "ID do PDV (Externo)": pdv.external_id,
+            
+            # --- NOVAS COLUNAS REQUERIDAS ---
+            "Tempo de Deslocamento (min)": round(travel_time_min, 1),
+            "Hora de Chegada Estimada": visit.estimated_arrival_time,
+            "Duração da Visita (min)": round(visit_time_min, 1),
+            "Hora de Saída Estimada": visit.estimated_departure_time,
+            "Tempo de Viagem Acumulado (min)": round(total_travel_time_seg / 60, 1),
+            "Tempo Total Acumulado (min)": round(total_time_acumulado_seg / 60, 1)
+            # --- FIM DAS NOVAS COLUNAS ---
         })
 
     # 3. Gerar o Arquivo Excel em Memória
