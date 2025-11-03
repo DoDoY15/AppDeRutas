@@ -7,8 +7,8 @@ class PointOfStopBase(BaseModel):
     name: str
     latitude: float
     longitude: float
-
-    external_id: Optional[str] = None
+    external_id: str 
+    
     chain: Optional[str] = None
     segment: Optional[str] = None
     channel: Optional[str] = None
@@ -34,5 +34,5 @@ class PointOfStop(PointOfStopBase):
     id: int
     
     class Config:
-        orm_mode = True 
+         
         from_attributes = True 

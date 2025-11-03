@@ -29,8 +29,12 @@ app = FastAPI(
     description = "API to manage users and points of sale (POS) for route optimization.",
     version = "1.0.0")
 
-origins = ["http://localhost:3000",
-           "http://localhost:5173"]
+origins = [
+            "http://localhost:3000",
+           "http://127.0.0.1",
+           "http://127.0.0.1:3000",
+           "http://localhost:5173"
+           ]
 
 app.add_middleware(
     CORSMiddleware,

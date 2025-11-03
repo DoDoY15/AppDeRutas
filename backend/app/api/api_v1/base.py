@@ -1,7 +1,7 @@
 from fastapi import APIRouter
 
 from .endpoints import login
-from .endpoints import optimizer
+from .endpoints import optimization
 from .endpoints import upload_setup 
 
 api_router = APIRouter()
@@ -9,7 +9,7 @@ api_router = APIRouter()
 api_router.include_router(login.router, tags=["authentication"])
 
 api_router.include_router(
-    optimizer.router, 
+    optimization.router, 
     prefix="/optimize", 
     tags=["optimizer"]
 )

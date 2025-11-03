@@ -1,13 +1,11 @@
 from pydantic import BaseModel
 from typing import Optional
 from datetime import date
-from models import VisitStatus
+from app.db.models import VisitStatus
 
 
 class DailyVisitBase(BaseModel):
-    """
-    Campos comuns que são compartilhados por todos os schemas de DailyVisit.
-    """
+
     visit_date: date
     user_id: int
     point_of_stop_id: int
@@ -18,7 +16,6 @@ class DailyVisitBase(BaseModel):
         from_attributes = True
         extra = 'ignore'
 
-
 class DailyVisitCreate(DailyVisitBase):
 
     pass
@@ -27,3 +24,6 @@ class DailyVisitCreate(DailyVisitBase):
 class DailyVisit(DailyVisitBase):
 
     id: int
+
+    class Config:
+        from_attributes = True
