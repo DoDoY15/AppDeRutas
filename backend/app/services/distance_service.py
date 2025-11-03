@@ -13,52 +13,45 @@ class DistanceService:
     def get_duration(self, origem, destino) -> int:
         """
         Função principal JIT para obter a duração da viagem em segundos.
-        'origem' e 'destino'
         """
+        global _local_cache 
+        
         origem_tipo = "user" if hasattr(origem, 'username') else "pos"
         destino_tipo = "pos" if hasattr(destino, 'name') else "user"
         
         cache_key = (origem_tipo, origem.id, destino_tipo, destino.id)
 
-        #  Checa cache em memória
         if cache_key in _local_cache:
             return _local_cache[cache_key]
 
-        #  Checa cache no DB
         db_duration = crud_cache.get_from_db_cache(
             self.db, origem_tipo, origem.id, destino_tipo, destino.id
         )
         if db_duration is not None:
-            print(f"  -> CACHE HIT (DB) {origem_tipo} {origem.id} -> {destino_tipo} {destino.id}. Usando penalidade.")
-            duration = 999999
+
+            print(f"  -> CACHE HIT (DB): {origem_tipo} {origem.id} -> {destino_tipo} {destino.id}")
             _local_cache[cache_key] = db_duration
-            return db_duration
+            return db_duration 
 
-        #  Obter coordenadas da Origem (User ou POS)
         if origem_tipo == "user":
-            orig_lat = origem.start_latitude
-            orig_lon = origem.start_longitude
-        else: # origem_tipo == "pos"
-            orig_lat = origem.latitude
-            orig_lon = origem.longitude
+            orig_lat, orig_lon = origem.start_latitude, origem.start_longitude
+        else: 
+            orig_lat, orig_lon = origem.latitude, origem.longitude
 
-        #  Obter coordenadas do Destino (User ou POS)
         if destino_tipo == "user":
-            dest_lat = destino.start_latitude
-            dest_lon = destino.start_longitude
-        else: # destino_tipo == "pos"
-            dest_lat = destino.latitude
-            dest_lon = destino.longitude
-            
-        #  CACHE MISS - Chama a API com as coordenadas CORRETAS
+            dest_lat, dest_lon = destino.start_latitude, destino.start_longitude
+        else: 
+            dest_lat, dest_lon = destino.latitude, destino.longitude
+
         print(f"!!! CHAMADA DE API: {origem_tipo} {origem.id} -> {destino_tipo} {destino.id} !!!")
         
         duration = self._call_google_maps_api(
             orig_lat, orig_lon, dest_lat, dest_lon
         )
+
         if duration is None:
             print(f"  -> AVISO: API falhou para {origem_tipo} {origem.id} -> {destino_tipo} {destino.id}. Usando penalidade.")
-            duration = 999999
+            duration = 999999 
 
         _local_cache[cache_key] = duration
         crud_cache.save_to_db_cache(
@@ -66,9 +59,11 @@ class DistanceService:
             distance_meters=0, 
             duration_seconds=duration
         )
+        
         return duration
 
     def _call_google_maps_api(self, orig_lat, orig_lon, dest_lat, dest_lon) -> Optional[int]:
+
         url = "https://maps.googleapis.com/maps/api/distancematrix/json"
         params = {
             "origins": f"{orig_lat},{orig_lon}",

@@ -2,7 +2,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy.orm import Session, joinedload
 from typing import Any, Dict
 from fastapi import HTTPException
-from app.db.models import OptimizationRun, OptimizationStatus, WeeklyPlan, User
+from app.db.models import OptimizationRun, OptimizationStatus, WeeklyPlan, User 
 from fastapi.responses import StreamingResponse
 from app.db.models import DailyVisit, PointOfStop
 import pandas as pd
@@ -38,7 +38,8 @@ def get_latest_optimization_status(db: Session) -> Dict[str, Any]:
         "run_id": latest_run.id, 
         "created_at": latest_run.created_at,
         "total_pdvs_assigned": latest_run.total_pdvs_assigned,
-        "total_pdvs_unassigned": latest_run.total_pdvs_unassigned
+        "total_pdvs_unassigned": latest_run.total_pdvs_unassigned,
+        "total_visits_missed": latest_run.total_visits_missed,
     }
 
 # ======================================================================
@@ -63,6 +64,7 @@ def get_latest_optimization_results(db: Session) -> Dict[str, Any]:
         "total_pdvs_assigned": latest_run.total_pdvs_assigned,
         "total_pdvs_unassigned": latest_run.total_pdvs_unassigned,
         "created_at": latest_run.created_at,
+        "total_visits_missed": latest_run.total_visits_missed,
     }
 
     # --- Dados da Tabela (com Sequência) ---

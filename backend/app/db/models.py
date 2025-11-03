@@ -117,6 +117,8 @@ class OptimizationRun(Base):
     total_pdvs_assigned = Column(Integer, default=0)
     total_pdvs_unassigned = Column(Integer, default=0)
 
+    total_visits_missed = Column(Integer, default=0)
+
 
 
 class UserDistanceCache(Base):

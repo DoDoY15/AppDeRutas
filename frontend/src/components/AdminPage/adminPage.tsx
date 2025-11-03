@@ -1,3 +1,4 @@
+// AdminPage.tsx (Corrigido)
 
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
@@ -8,7 +9,6 @@ import FileUploader from './fileUploader';
 const API_URL = 'http://localhost:8000';
 
 // botão
-
 interface OptimizeTriggerProps {
   onStart: () => void;
   loading: boolean; 
@@ -27,10 +27,10 @@ const OptimizeTrigger = ({ onStart, loading }: OptimizeTriggerProps) => (
     </button>
   </div>
 );
+
 // --- Componente Principal da Página ---
 const AdminPage: React.FC = () => {
   const [status, setStatus] = useState('IDLE');
-  // Ajuste nos tipos para refletir os dados que vêm da API
   const [dashboardData, setDashboardData] = useState<any>(null); 
   const [tableData, setTableData] = useState<any[]>([]);
   const [error, setError] = useState('');
@@ -38,7 +38,6 @@ const AdminPage: React.FC = () => {
   const fetchResults = useCallback(async () => {
     try {
       const response = await axios.get(`${API_URL}/api/v1/optimize/results/latest`);
-      
       setDashboardData(response.data.dashboard || null);
       setTableData(response.data.table || []);
       setStatus('COMPLETED');
@@ -70,14 +69,12 @@ const AdminPage: React.FC = () => {
 
   useEffect(() => {
     let intervalId: NodeJS.Timeout | undefined = undefined;
-
     if (status === 'RUNNING') {
       intervalId = setInterval(checkStatus, 5000);
     }
     return () => clearInterval(intervalId);
   }, [status, checkStatus]);
 
-  // Botão "Iniciar"
   const handleStartOptimization = async () => {
     setStatus('RUNNING'); 
     setError('');
@@ -85,13 +82,13 @@ const AdminPage: React.FC = () => {
     setTableData([]);
     try {
       await axios.post(`${API_URL}/api/v1/optimize/run-optimization`);
-      // Inicia a primeira verificação imediatamente
       checkStatus(); 
     } catch (e: any) {
       setStatus('FAILED');
       setError('Falha ao iniciar a tarefa: ' + (e.message || 'Erro desconhecido'));
     }
   };
+
   return (
     <div className="p-4 md:p-6 lg:p-8 max-w-7xl mx-auto space-y-6">
       <h1 className="text-3xl font-bold text-gray-900">
@@ -102,13 +99,26 @@ const AdminPage: React.FC = () => {
         {/* --- COLUNA DA ESQUERDA (Uploads e Botão) --- */}
         <div className="lg:col-span-2 space-y-6">
           <FileUploader />
-          <OptimizeTrigger onStart={handleStartOptimization} loading={status === 'RUNNING'} />
-          {/* ... (Feedback de Status) ... */}
-        </div>
 
+          <OptimizeTrigger 
+            onStart={handleStartOptimization} 
+            loading={status === 'RUNNING'} 
+          />
+
+          {status === 'RUNNING' && (
+            <div className="text-blue-600 font-semibold p-4 bg-blue-50 rounded-lg">
+              Processando otimização... Por favor, aguarde.
+            </div>
+          )}
+
+          {error && (
+            <div className="text-red-600 font-semibold p-4 bg-red-50 rounded-lg">
+              {error}
+            </div>
+          )}
+        </div>
         {/* --- COLUNA DA DIREITA (Dashboard) --- */}
         <div className="lg:col-span-1">
-          {/* --- 2. PASSE A PROP totalWorkers AQUI --- */}
           <Dashboard 
             data={dashboardData} 
             totalWorkers={tableData.length} 

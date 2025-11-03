@@ -1,11 +1,7 @@
-// DataTable.tsx
-
 import React from 'react';
 
-const API_URL = 'http://localhost:8000'; // Garanta que esta URL esteja correta
+const API_URL = 'http://localhost:8000'; 
 
-// 1. Interface para os dados da tabela (ATUALIZADA)
-// (Agora reflete 100% o que o back-end envia)
 interface WorkerRouteData {
   id: number;
   user_id: number;
@@ -24,19 +20,17 @@ interface WorkerRouteData {
   };
 }
 
-// 2. Props que o componente recebe
 interface DataTableProps {
   data: WorkerRouteData[];
 }
 
 const DataTable: React.FC<DataTableProps> = ({ data }) => {
-  
-  // Função auxiliar para renderizar a sequência de forma legível
+
   const renderSequencia = (sequenciaDia: string[]) => {
     if (sequenciaDia.length === 0) {
-      return <span className="text-gray-400">--</span>; // Mostra '--' se o dia estiver vazio
+      return <span className="text-gray-400">--</span>; 
     }
-    // Retorna os nomes dos PDVs, permitindo quebra de linha
+
     return (
       <div className="flex flex-col space-y-1">
         {sequenciaDia.map((pdv, index) => (
@@ -59,7 +53,6 @@ const DataTable: React.FC<DataTableProps> = ({ data }) => {
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
-              {/* --- CABEÇALHOS ATUALIZADOS --- */}
               <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Trabalhador</th>
               <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Segunda</th>
               <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Terça</th>
@@ -71,14 +64,11 @@ const DataTable: React.FC<DataTableProps> = ({ data }) => {
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
             {data.map((row) => (
-              <tr key={row.user_id} className="hover:bg-gray-50"> {/* Use user_id como chave */}
+              <tr key={row.user_id} className="hover:bg-gray-50"> 
                 <td className="px-3 py-4 align-top whitespace-nowrap text-sm font-medium text-gray-900">
-                  {/* Requisito: usuario_id e usuario_nombre */}
                   <div>{row.user.full_name}</div>
                   <div className="text-xs text-gray-500">ID: {row.user_id}</div>
                 </td>
-                
-                {/* --- CÉLULAS DA SEQUÊNCIA (Requisito) --- */}
                 <td className="px-3 py-4 align-top text-xs text-gray-600">{renderSequencia(row.sequencia.Segunda)}</td>
                 <td className="px-3 py-4 align-top text-xs text-gray-600">{renderSequencia(row.sequencia.Terça)}</td>
                 <td className="px-3 py-4 align-top text-xs text-gray-600">{renderSequencia(row.sequencia.Quarta)}</td>
@@ -86,7 +76,6 @@ const DataTable: React.FC<DataTableProps> = ({ data }) => {
                 <td className="px-3 py-4 align-top text-xs text-gray-600">{renderSequencia(row.sequencia.Sexta)}</td>
                 
                 <td className="px-3 py-4 align-top whitespace-nowrap text-sm">
-                  {/* Requisito: download */}
                   <a
                     href={`${API_URL}${row.download_link}`}
                     className="text-blue-600 hover:text-blue-800 font-medium"
