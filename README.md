@@ -1,110 +1,110 @@
-# 🛣️ Aplicativo de Optimización de Rutas (VRP)
+# 🛣️ Route Optimization Application (VRP)
 
-Este proyecto implementa una solución robusta para el Problema de Ruteo de Vehículos (VRP), que calcula la agenda semanal óptima para un equipo de vendedores, minimizando el tiempo de desplazamiento y respetando las restricciones de capacidad diaria (tiempo de trabajo y número máximo de visitas).
+This project implements a robust solution for the Vehicle Routing Problem (VRP), calculating the optimal weekly schedule for a team of salespeople, minimizing travel time and respecting daily capacity constraints (work time and maximum number of visits).
 
-El sistema está construido en FastAPI (Python) para el backend y React/TypeScript para el frontend.
+The system is built with FastAPI (Python) for the backend and React/TypeScript for the frontend.
 
-## 🎯 Objetivo del Sistema
+## 🎯 System Objective
 
-El objetivo principal es transformar dos archivos de datos de entrada (`Usuarios` y `PDVs`) en una **agenda semanal optimizada**, garantizando que cada PDV reciba el número correcto de visitas por semana (Múltiples Pasadas) y que el tiempo de desplazamiento sea minimizado usando datos de tráfico en tiempo real (caché de Google Maps).
+The main goal is to transform two input data files (`Users` and `PDVs`) into an **optimized weekly schedule**, ensuring each PDV receives the correct number of weekly visits (Multiple Passes) and that travel time is minimized using real-time traffic data (Google Maps cache).
 
 ---
 
-## ⚙️ 1. Entregables y Estructura
+## ⚙️ 1. Deliverables and Structure
 
-### 1.1. Estructura del Repositorio
+### 1.1. Repository Structure
 
 ```
 /APP ROTAS
 ├── backend/
 │   ├── app/
 │   │   ├── api/
-│   │   ├── core (configuracion y seguridad para possible escalabilidad)
-│   │   ├── crud/ (Lógica de Upsert y Caché DB)
-│   │   ├── db/ (Modelos SQLAlchemy)
-│   │   ├──  services/ (Algoritmo y API JIT)
-│   │   └── utils (para possible escalabilidad)
+│   │   ├── core (configuration and security for potential scalability)
+│   │   ├── crud/ (Upsert and DB Cache Logic)
+│   │   ├── db/ (SQLAlchemy Models)
+│   │   ├──  services/ (Algorithm and JIT API)
+│   │   └── utils (for potential scalability)
 │   ├── main.py
-│   └── .env (o config.py)
+│   └── .env (or config.py)
 │
 ├── frontend/
-│   └── src/ (Código React/TSX)
+│   └── src/ (React/TSX Code)
 │
 └── README.md
 ```
 
-💻 2. Instrucciones de Instalación y Ejecución
+💻 2. Installation and Execution Instructions
 
-Prerrequisitos
+Prerequisites
 
-1.  **Python 3.9+** (o la versión que usaste, basada en tu `venv`).
-2.  **Node.js y npm** (para el frontend React).
-3.  **Google Maps API Key** (con "Distance Matrix API" y "Geocoding API" habilitadas).
+1.  **Python 3.9+** (or the version you used, based on your `venv`).
+2.  **Node.js and npm** (for the React frontend).
+3.  **Google Maps API Key** (with "Distance Matrix API" and "Geocoding API" enabled).
 
-### 2.1. Configuración del Backend (Python)
+### 2.1. Backend Configuration (Python)
 
-1.  Navega hasta la carpeta `backend/`.
-2.  Crea y activa tu entorno virtual:
+1.  Navigate to the `backend/` folder.
+2.  Create and activate your virtual environment:
     ```bash
     python -m venv venv
     .\venv\Scripts\activate
     ```
-3.  Instala las dependencias:
+3.  Install dependencies:
     ```bash
     pip install -r requirements.txt
     ```
-4.  **Configuración de la API Key:** Edita tu archivo de configuración (ej: `.env` o `app/core/config.py`) e inserta tu clave de Google Maps.
-5.  **Inicia el Servidor:**
+4.  **API Key Configuration:** Edit your configuration file (e.g., `.env` or `app/core/config.py`) and insert your Google Maps key.
+5.  **Start the Server:**
     ```bash
     uvicorn app.main:app --reload
     ```
-    (El servidor iniciará en `http://127.0.0.1:8000`).
+    (The server will start at `http://127.0.0.1:8000`).
 
-### 2.2. Configuración del Frontend (React)
+### 2.2. Frontend Configuration (React)
 
-1.  Abre una **segunda terminal** y navega hasta la carpeta `frontend/`.
-2.  Instala las dependencias:
+1.  Open a **second terminal** and navigate to the `frontend/` folder.
+2.  Install dependencies:
     ```bash
     npm install
     ```
-3.  Inicia la Aplicación React:
+3.  Start the React Application:
     ```bash
     npm start
     ```
-    (El frontend abrirá en `http://localhost:3000`).
+    (The frontend will open at `http://localhost:3000`).
 
 ---
 
-## 🧠 3. Explicación del Algoritmo de Optimización
+## 🧠 3. Optimization Algorithm Explanation
 
-Los detalles completos sobre la heurística y las reglas están en `ALGORITHM.md`, pero aquí está el resumen:
+Full details about the heuristic and rules are in `ALGORITHM.md`, but here is the summary:
 
-### 3.1. Algoritmo Elegido: Inserción Híbrida JIT (Just-in-Time)
+### 3.1. Chosen Algorithm: Hybrid JIT (Just-in-Time) Insertion
 
-Debido al volumen de datos (2.000 PDVs), una matriz de distancia completa sería muy costosa (alrededor de $660 USD por ejecución). El algoritmo resuelve esto en tres fases:
+Due to the data volume (2,000 PDVs), a full distance matrix would be very expensive (around $660 USD per run). The algorithm solves this in three phases:
 
-1.  **Filtro Geográfico (Haversine):** Para cada PDV, el sistema usa la fórmula Haversine (gratuita) para crear una lista de "Trabajadores Candidatos" (todos los que están dentro de un radio de 75 km).
-2.  **Múltiples Pasadas (Agenda Semanal):** El algoritmo itera MÚLTIPLES veces (del 1º al 5º día) en la lista de PDVs para garantizar que todos los PDVs reciban el número correcto de visitas semanales (`visits_per_week`).
-3.  **Inserción Optimizada (JIT):** Para cada PDV y para cada trabajador candidato, el sistema usa la heurística de **"Vecino Más Cercano" (Nearest Neighbor)**, pero con una mejura crucial:
-    *   **Costo JIT:** El costo real del tiempo de viaje (`get_distance`) solo se consulta cuando el algoritmo necesita un par específico (A -> B). Verifica primero la caché de la BD y la memoria para ahorrar en la llamada a la API de Google.
+1.  **Geographic Filter (Haversine):** For each PDV, the system uses the Haversine formula (free) to create a list of "Candidate Workers" (all those within a 75 km radius).
+2.  **Multiple Passes (Weekly Schedule):** The algorithm iterates MULTIPLE times (from the 1st to the 5th day) over the PDV list to ensure all PDVs receive the correct number of weekly visits (`visits_per_week`).
+3.  **Optimized Insertion (JIT):** For each PDV and for each candidate worker, the system uses the **"Nearest Neighbor"** heuristic, but with a crucial improvement:
+    *   **JIT Cost:** The actual travel time cost (`get_distance`) is only queried when the algorithm needs a specific pair (A -> B). It first checks the DB cache and memory to save on Google API calls.
 
-### 3.2. Reglas de Negocio y Restricciones (Lo que el Código Garantiza)
+### 3.2. Business Rules and Constraints (What the Code Guarantees)
 
-| **Regla** | **Lógica de Cálculo** |
+| **Rule** | **Calculation Logic** |
 | --- | --- |
-| **Asignación Justa** | El PDV se asigna al trabajador cuya ruta **ya existente** resulta en el menor `costo_adicional_desplazamiento` (tiempo de viaje). |
-| **Límite de Tiempo** | La restricción se verifica solo contra el **Tiempo de la Visita** (ej: `visita_duration_seconds`). El tiempo de desplazamiento es **ignorado** en la verificación de capacidad diaria, garantizando que el PDV sea agendado incluso si el viaje es largo (según lo solicitado). |
-| **Límite Diario** | El número de PDVs agendados por día no excede `max_visits_per_day`. |
-| **Estado "Atendido"** | Un PDV solo se cuenta como **`total_pdvs_assigned`** si recibe el número completo de visitas requeridas (`visitas_per_week`). |
+| **Fair Assignment** | The PDV is assigned to the worker whose **existing** route results in the least `additional_travel_time_cost`. |
+| **Time Limit** | The constraint is checked only against the **Visit Duration** (e.g., `visit_duration_seconds`). Travel time is **ignored** in the daily capacity check, ensuring the PDV is scheduled even if the trip is long (as requested). |
+| **Daily Limit** | The number of PDVs scheduled per day does not exceed `max_visits_per_day`. |
+| **"Served" Status** | A PDV is only counted as **`total_pdvs_assigned`** if it receives the full required number of visits (`visits_per_week`). |
 
 ---
 
-## 4. 🔗 Uso de la Aplicación (Flujo de Prueba)
+## 4. 🔗 Application Usage (Testing Flow)
 
-Accede a `http://localhost:3000` y sigue el flujo:
+Access `http://localhost:3000` and follow the flow:
 
-1.  **POBLAR BD:** Usa la sección de Carga para enviar `Plantilla_Usuarios.csv` y `Plantilla_PDV.csv`.
-2.  **INICIAR:** Haz clic en "Iniciar Generación de Rutas".
-3.  **MONITOREAR:** El panel hará el *polling* de `GET /status/latest` y esperará hasta `COMPLETED`.
-4.  **RESULTADOS:** La tabla se llenará con el `usuario_nombre` y la `Secuencia de PDVs asignados` por día de la semana (Lunes a Viernes).
-5.  **DESCARGAR:** El botón "Descargar Excel" generará el archivo de resultados conteniendo `Hora de Llegada Estimada`, `Duración de la Visita`, y `Tiempo Total Acumulado`.
+1.  **POPULATE DB:** Use the Upload section to send `Plantilla_Usuarios.csv` and `Plantilla_PDV.csv`.
+2.  **START:** Click "Start Route Generation".
+3.  **MONITOR:** The panel will poll `GET /status/latest` and wait until `COMPLETED`.
+4.  **RESULTS:** The table will populate with the `user_name` and the `Assigned PDV Sequence` for each weekday (Monday to Friday).
+5.  **DOWNLOAD:** The "Download Excel" button will generate the results file containing `Estimated Arrival Time`, `Visit Duration`, and `Total Accumulated Time`.
